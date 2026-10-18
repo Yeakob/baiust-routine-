@@ -1,0 +1,31 @@
+# Local development stack: MongoDB (single-node replica set, so transactions work),
+# the optimizer and the API serving the built client on http://localhost:4000
+services:
+  mongo:
+    image: mongo:7.0
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports: ["27017:27017"]
+    volumes: ["mongo-data:/data/db"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "try { rs.status().ok } catch (e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo:27017'}]}).ok }"]
+      interval: 5s
+      retries: 20
+  optimizer:
+    build: ./optimizer
+    environment:
+      OPTIMIZER_TOKEN: dev-optimizer-token
+    ports: ["8001:8001"]
+  web:
+    build: .
+    depends_on:
+      mongo: { condition: service_healthy }
+      optimizer: { condition: service_started }
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://mongo:27017/baiust_routine?replicaSet=rs0
+      JWT_SECRET: local-docker-secret-change-me-0123456789
+      OPTIMIZER_URL: http://optimizer:8001
+      OPTIMIZER_TOKEN: dev-optimizer-token
+    ports: ["4000:4000"]
+volumes:
+  mongo-data:

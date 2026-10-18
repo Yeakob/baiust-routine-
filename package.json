@@ -1,0 +1,25 @@
+{
+  "name": "baiust-cse-routine",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Automated routine generator for the CSE Department, BAIUST",
+  "workspaces": [
+    "shared",
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "dev:optimizer": "cd optimizer && uvicorn app.main:app --reload --port 8001",
+    "build": "npm run build -w client && npm run build -w server",
+    "start": "npm start -w server",
+    "seed": "npm run seed -w server",
+    "test": "npm test -w shared && npm test -w server",
+    "test:e2e": "npm run e2e -w client",
+    "typecheck": "npm run typecheck -w shared && npm run typecheck -w server && npm run typecheck -w client"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

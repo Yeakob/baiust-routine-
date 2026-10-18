@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+*.log
+__pycache__
+.venv
+client/test-results
+client/playwright-report
+.scratch

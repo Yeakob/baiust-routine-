@@ -1,0 +1,57 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# 1) Create a MongoDB Atlas cluster and copy its connection string.
+# 2) New > Blueprint in Render, point it at this repository.
+# 3) When prompted, paste MONGODB_URI and the optimizer URL (see docs/DEPLOYMENT.md).
+envVarGroups:
+  - name: routine-shared
+    envVars:
+      - key: OPTIMIZER_TOKEN
+        generateValue: true
+
+services:
+  # API + built React client on one origin (secure same-site cookies).
+  - type: web
+    name: baiust-routine
+    runtime: node
+    plan: starter
+    region: singapore
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 20.18.1
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: OPTIMIZER_URL
+        sync: false # e.g. https://baiust-routine-optimizer.onrender.com
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+      - fromGroup: routine-shared
+
+  # OR-Tools CP-SAT optimizer (CPU-bound: choose a plan with a full CPU).
+  - type: web
+    name: baiust-routine-optimizer
+    runtime: python
+    plan: standard
+    region: singapore
+    rootDir: optimizer
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: OPTIMIZER_WORKERS
+        value: "4"
+      - key: OPTIMIZER_MAX_SECONDS
+        value: "300"
+      - fromGroup: routine-shared
